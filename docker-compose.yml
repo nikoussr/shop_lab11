@@ -1,18 +1,39 @@
 services:
   product-service:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "7999:7999"
     environment:
-      - DB_HOST=localhost  # меняем с 'db' на 'localhost'
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=shop
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_SCHEMA=product_service
-    # Убираем depends_on, т.к. БД уже запущена
+    depends_on:
+      - db
     volumes:
       - .:/app
     restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=shop
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5433:5432"  # Используем другой порт чтобы не конфликтовать
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
